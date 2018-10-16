@@ -26,8 +26,12 @@ public class Recommender
 	PropertiesConfiguration config ;
 	int minSupport ;
 	int min_evidence_3 ;
+	int min_evidence_2 ;
 	double confidence_threshold_rulesize_2 ;
 	double confidence_threshold_rulesize_3 ;
+	
+	ArrayList<Integer> storage = new ArrayList<Integer>();
+	//TODO:
 
 
 	Recommender(PropertiesConfiguration config) {
@@ -151,9 +155,49 @@ public class Recommender
 	}
 
 	private int predictPair(HashSet<Integer> anItemset, Integer j) {
-		/* TODO: implement this method */
 		
-		// Compute support, confidence, or lift. Based on their threshold, decide how to predict. Return 1 when metrics are satisfied by threshold, otherwise 0.
+		if (anItemset.size() < 1)
+			return 0 ;
+		
+		min_evidence_2 = min_evidence_3; //complete config.properties about this, and remove this line.
+
+		// Compute support, confidence, or lift. Based on their threshold, decide how to predict. Return 1 when metrics are satisfied by thresholds, otherwise 0.
+		// In the current implementation, we considered only confidence.
+		int evidence = 0 ;
+		for (Integer p : anItemset) {
+			// the number baskets for I
+			Integer numBasketsForI = freqItemsetsWithSize1.get(p) ;
+				
+			
+			if (numBasketsForI == null)
+				return 0 ;
+				
+			// the number of baskets for I U {j}
+			TreeSet<Integer> assocRule = new TreeSet<Integer>() ;
+			assocRule.add(p) ;
+			assocRule.add(j) ;
+			FrequentItemsetSize2 item = new FrequentItemsetSize2(assocRule) ;	
+			Integer numBasketsForIUnionj = freqItemsetsWithSize2.get(item) ; // All itemsets in freqItemsetsWithSize3 satisfy minimum support when the are computed.
+			if (numBasketsForIUnionj == null)
+				return 0;
+				
+			// compute confidence: The confidence of the rule I -> j is the ratio of the number of baskets for I U {j} and the number of baskets for I.
+			double confidence = (double) numBasketsForIUnionj / numBasketsForI;
+			
+			if (confidence >= confidence_threshold_rulesize_2) 
+			{
+				System.out.print("{");
+			        System.out.print(p+", ");
+				System.out.println(j+"} -> confidence: " +confidence);
+				evidence++ ;
+			}
+		}
+
+		if (evidence >= min_evidence_2) 
+			return 1 ;
+		
+		// Compute support, confidence, or lift. Based on their threshold, decide how to predict.
+		// Return 1 when metrics are satisfied by threshold, otherwise 0.
 		return 0 ;
 	}
 
@@ -185,11 +229,18 @@ public class Recommender
 			// compute confidence: The confidence of the rule I -> j is the ratio of the number of baskets for I U {j} and the number of baskets for I.
 			double confidence = (double) numBasketsForIUnionj / numBasketsForI;
 		
-			if (confidence >= confidence_threshold_rulesize_3) 
+			if (confidence >= confidence_threshold_rulesize_3)  {
+				System.out.print("{");
+				for (Iterator<Integer> it = p.iterator(); it.hasNext(); ) {
+			        Integer i = it.next();
+			        System.out.print(+i+", ");
+			    }
+				System.out.println(j+"} -> confidence: " +confidence);
 				evidence++ ;
+			}
 		}
 
-		if (evidence >= min_evidence_3) 
+		if (evidence >= min_evidence_3)
 			return 1 ;
 
 		return 0 ;
@@ -245,15 +296,52 @@ class FrequentItemsetSize3 implements Comparable
 {
 	int [] items ;
 
+	int findBigger(int a, int b) {
+		if (a< b) 
+			return b;
+		else 
+			return a ;
+	}
+	int findSmaller(int a, int b) {
+		if (a> b) 
+			return b;
+		else 
+			return a ;
+	}
+	
 	FrequentItemsetSize3(Set<Integer> s) {
-		/* TODO: implement this method */
+		int top, mid, bottom;
+		Integer [] elem = s.toArray(new Integer[3]) ;
+		items = new int[3];
+		
+		top = this.findBigger(this.findBigger(elem[0],elem[1]),this.findBigger(elem[0],elem[2]));
+		bottom = this.findSmaller(this.findSmaller(elem[0],elem[1]),this.findSmaller(elem[0],elem[2]));
+		mid = top;
+		for(Integer one : elem) {
+			if(top>one && one>=bottom) {
+				mid = one;
+			}
+		}
+		this.items[0] = bottom;
+		this.items[1] = mid;
+		this.items[2] = top;
 		
 		// values in s must be sorted and save into items array
 	}
 
 	@Override
 	public int compareTo(Object obj) {  // this method is used for sorting when using TreeMap
-		/* TODO: implement this method */
+		
+		FrequentItemsetSize3 p = (FrequentItemsetSize3) obj ;
+
+		for(int i = 0; i<3; i++) {
+			if(this.items[i] < p.items[i])
+				return -1;
+			else if (this.items[i] > p.items[i]){
+				return 1;
+			}
+		}
+		
 		return 0 ;
 	}
 }
