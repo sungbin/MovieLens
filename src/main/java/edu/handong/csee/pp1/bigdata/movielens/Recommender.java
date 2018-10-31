@@ -170,7 +170,7 @@ public class Recommender
 				
 			
 			if (numBasketsForI == null)
-				return 0 ;
+				continue;
 				
 			// the number of baskets for I U {j}
 			TreeSet<Integer> assocRule = new TreeSet<Integer>() ;
@@ -179,7 +179,7 @@ public class Recommender
 			FrequentItemsetSize2 item = new FrequentItemsetSize2(assocRule) ;	
 			Integer numBasketsForIUnionj = freqItemsetsWithSize2.get(item) ; // All itemsets in freqItemsetsWithSize3 satisfy minimum support when the are computed.
 			if (numBasketsForIUnionj == null)
-				return 0;
+				continue;
 				
 			// compute confidence: The confidence of the rule I -> j is the ratio of the number of baskets for I U {j} and the number of baskets for I.
 			double confidence = (double) numBasketsForIUnionj / numBasketsForI;
@@ -187,8 +187,8 @@ public class Recommender
 			if (confidence >= confidence_threshold_rulesize_2) 
 			{
 				System.out.print("{");
-			        System.out.print(p+", ");
-				System.out.println(j+"} -> confidence: " +confidence);
+				System.out.print(p+"} -> ");
+				System.out.println(j+": confidence: " +confidence);
 				evidence++ ;
 			}
 		}
@@ -235,7 +235,7 @@ public class Recommender
 			        Integer i = it.next();
 			        System.out.print(+i+", ");
 			    }
-				System.out.println(j+"} -> confidence: " +confidence);
+				System.out.println("} -> "+j+": confidence: " +confidence);
 				evidence++ ;
 			}
 		}
